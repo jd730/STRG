@@ -65,7 +65,7 @@ class VideoLoaderFlowHDF5(object):
 
             flow_data = []
             for flow in self.flows:
-                flow_data.append(f[f'video_{flow}'])
+                flow_data.append(f['video_{}'.format(flow)])
 
             video = []
             for i in frame_indices:

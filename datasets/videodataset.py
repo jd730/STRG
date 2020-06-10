@@ -5,7 +5,7 @@ import torch
 import torch.utils.data as data
 
 from .loader import VideoLoader
-
+import pdb
 
 def get_class_labels(data):
     class_labels_map = {}
@@ -20,7 +20,6 @@ def get_database(data, subset, root_path, video_path_formatter):
     video_ids = []
     video_paths = []
     annotations = []
-
     for key, value in data['database'].items():
         this_subset = value['subset']
         if this_subset == subset:
@@ -47,7 +46,7 @@ class VideoDataset(data.Dataset):
                  video_loader=None,
                  video_path_formatter=(lambda root_path, label, video_id:
                                        root_path / label / video_id),
-                 image_name_formatter=lambda x: f'image_{x:05d}.jpg',
+                 image_name_formatter=lambda x: 'image_{:05d}.jpg'.format(x),
                  target_type='label'):
         self.data, self.class_names = self.__make_dataset(
             root_path, annotation_path, subset, video_path_formatter)
@@ -55,7 +54,6 @@ class VideoDataset(data.Dataset):
         self.spatial_transform = spatial_transform
         self.temporal_transform = temporal_transform
         self.target_transform = target_transform
-
         if video_loader is None:
             self.loader = VideoLoader(image_name_formatter)
         else:

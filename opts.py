@@ -49,7 +49,7 @@ def parse_opts():
               '(conv1, layer1, fc, denseblock1, classifier, ...).'
               'The default means all layers are fine-tuned.'))
     parser.add_argument('--sample_size',
-                        default=112,
+                        default=224,
                         type=int,
                         help='Height and width of inputs')
     parser.add_argument('--sample_duration',
@@ -207,7 +207,7 @@ def parse_opts():
                         action='store_true',
                         help='If true, cuda is not used.')
     parser.add_argument('--n_threads',
-                        default=4,
+                        default=1,
                         type=int,
                         help='Number of threads for multi-thread loading')
     parser.add_argument('--checkpoint',
