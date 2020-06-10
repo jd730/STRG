@@ -2,6 +2,7 @@ import torch
 import time
 import os
 import sys
+import pdb
 
 import torch
 import torch.distributed as dist
@@ -19,10 +20,13 @@ def train_epoch(epoch,
                 epoch_logger,
                 batch_logger,
                 tb_writer=None,
-                distributed=False):
+                distributed=False,
+                rpn=None):
     print('train at epoch {}'.format(epoch))
 
     model.train()
+    if rpn is not None:
+        rpn.eval()
 
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -34,7 +38,12 @@ def train_epoch(epoch,
         data_time.update(time.time() - end_time)
 
         targets = targets.to(device, non_blocking=True)
-        outputs = model(inputs)
+        N, C, T, H, W = inputs.size()
+        rpn_inputs = inputs.transpose(1,2).contiguous().view(N*T,C,H,W)
+        with torch.no_grad():
+            proposals = rpn(rpn_inputs)
+        proposals = torch.cat((proposals)).view(N,T,10,4)
+        outputs = model(inputs, proposals)
         loss = criterion(outputs, targets)
         acc = calculate_accuracy(outputs, targets)
 

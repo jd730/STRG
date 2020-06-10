@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 import random
 import os
-
+import pdb
 import numpy as np
 import torch
 from torch.nn import CrossEntropyLoss
@@ -11,10 +11,12 @@ import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.backends import cudnn
 import torchvision
+from torchvision.models.detection import fasterrcnn_resnet50_fpn
 
 from opts import parse_opts
 from model import (generate_model, load_pretrained_model, make_data_parallel,
                    get_fine_tuning_parameters)
+from strg import STRG
 from mean import get_mean_std
 from spatial_transforms import (Compose, Normalize, Resize, CenterCrop,
                                 CornerCrop, MultiScaleCornerCrop,
@@ -30,6 +32,8 @@ from utils import Logger, worker_init_fn, get_lr
 from training import train_epoch
 from validation import val_epoch
 import inference
+
+from rpn import RPN
 
 
 def json_serial(obj):
@@ -321,7 +325,8 @@ def main_worker(index, opt):
     torch.manual_seed(opt.manual_seed)
 
     if index >= 0 and opt.device.type == 'cuda':
-        opt.device = torch.device(f'cuda:{index}')
+#        opt.device = torch.device(f'cuda:{index}')
+        opt.device = torch.device('cuda:{}'.format(index))
 
     if opt.distributed:
         opt.dist_rank = opt.dist_rank * opt.ngpus_per_node + index
@@ -343,7 +348,13 @@ def main_worker(index, opt):
                                       opt.n_finetune_classes)
     if opt.resume_path is not None:
         model = resume_model(opt.resume_path, opt.arch, model)
+
+    model = STRG(model)
+#    rpn = fasterrcnn_resnet50_fpn(pretrained=True)
+    rpn = RPN()
+
     model = make_data_parallel(model, opt.distributed, opt.device)
+    rpn = make_data_parallel(rpn, opt.distributed, opt.device)
 
     if opt.pretrain_path:
         parameters = get_fine_tuning_parameters(model, opt.ft_begin_module)
@@ -384,7 +395,7 @@ def main_worker(index, opt):
             current_lr = get_lr(optimizer)
             train_epoch(i, train_loader, model, criterion, optimizer,
                         opt.device, current_lr, train_logger,
-                        train_batch_logger, tb_writer, opt.distributed)
+                        train_batch_logger, tb_writer, opt.distributed,rpn=rpn)
 
             if i % opt.checkpoint == 0 and opt.is_master_node:
                 save_file_path = opt.result_path / 'save_{}.pth'.format(i)
