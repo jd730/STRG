@@ -23,7 +23,7 @@ class RPN(nn.Module):
         self.rpn = copy.deepcopy(model.rpn)
 #        self.eaget_outputs = copy.deepcopy(model.eaget_outputs)
         self.roi_heads = copy.deepcopy(model.roi_heads)
-        self.rpn._pre_nms_top_n = {'training':10, 'testing':10}
+        self.rpn._pre_nms_top_n = {'training':20, 'testing':20}
         self.rpn._post_nms_top_n = {'training':10, 'testing':10}
         self.rpn.fg_bg_sampler.positive_fraction = 1.0
         del model

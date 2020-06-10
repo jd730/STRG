@@ -5,9 +5,12 @@ import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision.ops import RoIAlign
 
-from rpn import RPN
-from torchvision.models.detection.image_list import ImageList
+from rgcn_models import RGCN
+from roi_graph import extract_rois
+
+# (output_size, spatial_scale, sampling_ratio, aligned=False)
 
 
 class STRG(nn.Module):
@@ -39,7 +42,9 @@ class STRG(nn.Module):
         )
 
         self.strg_gcn = nn.Identity()
-        self.rpn = RPN().eval()
+
+        self.rgcn = RGCN()
+        self.roi_align = RoIAlign((7,7), 1/8, -1, aligned=True)
 
     def extract_feature(self, x):
         x = self.base_model.conv1(x)
@@ -58,10 +63,18 @@ class STRG(nn.Module):
 
     def forward(self, inputs, rois=None):
         features = self.extract_feature(inputs)
-        features = self.reducer(features)
+        features = self.reducer(features) # N C T H W
         pooled_features = self.avg_pool(features).squeeze(-1).squeeze(-1).squeeze(-1)
+        N, C, T, H, W = features.shape
 
-        pdb.set_trace()
+
+        gcn_features = features.transpose(1,2).contiguous().view(N*T,C,H,W)
+        rois = rois.view(-1, 10, 4)
+        rois = [r for r in rois]
+        rois_features = self.roi_align(gcn_features, rois).view(N,T,C,H,W)
+        rois_info = extract_rois(rois_features, rois)
+
+
         gcn_features = self.strg_gcn(features)
         gcn_features = self.node_pool(gcn_features).squeeze(-1)
 
@@ -69,6 +82,3 @@ class STRG(nn.Module):
         outputs = self.classifier(features)
 
         return outputs
-
-
-
