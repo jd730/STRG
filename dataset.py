@@ -13,6 +13,9 @@ def image_name_formatter(x):
 def sthv2_image_name_formatter(x):
     return '{:06d}.jpg'.format(x)
 
+def sthv1_image_name_formatter(x):
+    return '{:05d}.jpg'.format(x)
+
 def get_training_data(video_path,
                       annotation_path,
                       dataset_name,
@@ -22,11 +25,14 @@ def get_training_data(video_path,
                       temporal_transform=None,
                       target_transform=None):
     assert dataset_name in [
-        'kinetics', 'activitynet', 'ucf101', 'hmdb51', 'mit', 'somethingv2'
+        'kinetics', 'activitynet', 'ucf101', 'hmdb51', 'mit', 'somethingv2',
+        'somethingv1'
     ]
     assert input_type in ['rgb', 'flow']
     assert file_type in ['jpg', 'hdf5']
-    if 'something' in dataset_name:
+    if 'somethingv1' in dataset_name:
+        formatter = sthv1_image_name_formatter
+    elif 'somethingv2' in dataset_name:
         formatter = sthv2_image_name_formatter
     else:
         formatter = image_name_formatter
@@ -80,7 +86,8 @@ def get_validation_data(video_path,
                         temporal_transform=None,
                         target_transform=None):
     assert dataset_name in [
-        'kinetics', 'activitynet', 'ucf101', 'hmdb51', 'mit', 'somethingv2'
+        'kinetics', 'activitynet', 'ucf101', 'hmdb51', 'mit', 'somethingv2',
+        'somethingv1'
     ]
     assert input_type in ['rgb', 'flow']
     assert file_type in ['jpg', 'hdf5']
