@@ -52,19 +52,23 @@ def train_epoch(epoch,
 
         targets = targets.to(device, non_blocking=True)
         if rpn is not None:
+            if i > 0 and N != len(inputs):
+                print(inputs.shape)
+                continue
             N, C, T, H, W = inputs.size()
 
             interval = 16
             idx = torch.arange(0,T,interval)
             rpn_inputs = inputs[:,:,idx]
             rpn_inputs = rpn_inputs.transpose(1,2).contiguous().view(N*(T//interval),C,H,W)
-            with torch.no_grad():
-                proposals = rpn(rpn_inputs)
             try:
+                with torch.no_grad():
+                    proposals = rpn(rpn_inputs)
                 proposals = torch.cat((proposals)).view(N,T//interval,10,4)
             except :
                 pdb.set_trace()
-            outputs = model(inputs, proposals)
+                continue
+            outputs = model(inputs, proposals.detach())
         else:
             outputs = model(inputs)
         loss = criterion(outputs, targets)
@@ -135,4 +139,4 @@ def train_epoch(epoch,
     if tb_writer is not None:
         tb_writer.add_scalar('train/loss', losses.avg, epoch)
         tb_writer.add_scalar('train/acc', accuracies.avg, epoch)
-        tb_writer.add_scalar('train/lr', accuracies.avg, epoch)
+        tb_writer.add_scalar('train/lr', current_lr, epoch)
