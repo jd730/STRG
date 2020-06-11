@@ -6,3 +6,4 @@ torch==1.5
 torchvision==0.5
 wandb
 h5py
+tensorboardX
