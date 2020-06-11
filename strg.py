@@ -17,7 +17,8 @@ from models import resnet, resnet2p1d, pre_act_resnet, wide_resnet, resnext, den
 class STRG(nn.Module):
     def __init__(self, base_model, in_channel=2048, out_channel=512,
                  nclass=174, dropout=0.3, nrois=10,
-                 freeze_bn=True, freeze_bn_affine=True
+                 freeze_bn=True, freeze_bn_affine=True,
+                 roi_size=4
                  ):
         super(STRG,self).__init__()
         self.base_model = base_model
@@ -31,11 +32,12 @@ class STRG(nn.Module):
 
         self.base_model.fc = nn.Identity()
         self.base_model.avgpool = nn.Identity()
-        self.base_model.maxpool.stride = (1,2,2)
-        self.base_model.layer3[0].conv2.stride=(1,2,2)
-        self.base_model.layer3[0].downsample[0].stride=(1,2,2)
-        self.base_model.layer4[0].conv2.stride=(1,1,1)
-        self.base_model.layer4[0].downsample[0].stride=(1,1,1)
+        if False:
+            self.base_model.maxpool.stride = (1,2,2)
+            self.base_model.layer3[0].conv2.stride=(1,2,2)
+            self.base_model.layer3[0].downsample[0].stride=(1,2,2)
+            self.base_model.layer4[0].conv2.stride=(1,1,1)
+            self.base_model.layer4[0].downsample[0].stride=(1,1,1)
 
         self.reducer = nn.Conv3d(self.in_channel, self.out_channel,1)
         self.classifier = nn.Linear(2*self.out_channel, nclass)
@@ -46,7 +48,7 @@ class STRG(nn.Module):
         self.max_pool = nn.AdaptiveAvgPool2d(1)
 
         self.strg_gcn = RGCN()
-        self.roi_align = RoIAlign((7,7), 1/8, -1, aligned=True)
+        self.roi_align = RoIAlign((roi_size,roi_size), 1/8, -1, aligned=True)
 
     def extract_feature(self, x):
         x = self.base_model.conv1(x)

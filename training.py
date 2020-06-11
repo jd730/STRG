@@ -40,12 +40,17 @@ def train_epoch(epoch,
         targets = targets.to(device, non_blocking=True)
         if rpn is not None:
             N, C, T, H, W = inputs.size()
-            idx = torch.arange(0,T,2)
+
+            interval = 16
+            idx = torch.arange(0,T,interval)
             rpn_inputs = inputs[:,:,idx]
-            rpn_inputs = rpn_inputs.transpose(1,2).contiguous().view(N*(T//2),C,H,W)
+            rpn_inputs = rpn_inputs.transpose(1,2).contiguous().view(N*(T//interval),C,H,W)
             with torch.no_grad():
                 proposals = rpn(rpn_inputs)
-            proposals = torch.cat((proposals)).view(N,T//2,10,4)
+            try:
+                proposals = torch.cat((proposals)).view(N,T//interval,10,4)
+            except :
+                pdb.set_trace()
             outputs = model(inputs, proposals)
         else:
             outputs = model(inputs)
