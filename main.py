@@ -4,6 +4,7 @@ import random
 import os
 import pdb
 import numpy as np
+import wandb
 import torch
 from torch.nn import CrossEntropyLoss
 from torch.optim import SGD, lr_scheduler
@@ -389,6 +390,18 @@ def main_worker(index, opt):
                                       purge_step=opt.begin_epoch)
     else:
         tb_writer = None
+
+    if opt.wandb:
+        name = str(opt.result_path)
+        wandb.init(
+            project='strg',
+            name=name,
+            config=opt,
+            dir= name,
+#            resume=str(opt.resume_path) != '',
+            sync_tensorboard=True)
+
+
 
     prev_val_loss = None
     for i in range(opt.begin_epoch, opt.n_epochs + 1):

@@ -288,6 +288,9 @@ def parse_opts():
                         type=int,
                         help='number of nodes for distributed training')
 
+    parser.add_argument('--wandb',
+                        action='store_true',
+                        help='Use wandb.')
     parser.add_argument('--strg',
                         action='store_true',
                         help='Use STRG.')

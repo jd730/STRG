@@ -4,3 +4,4 @@ pandas
 numpy
 torch==1.5
 torchvision==0.5
+wandb
