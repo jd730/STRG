@@ -421,7 +421,7 @@ def main_worker(index, opt):
         if not opt.no_val:
             prev_val_loss = val_epoch(i, val_loader, model, criterion,
                                       opt.device, val_logger, tb_writer,
-                                      opt.distributed)
+                                      opt.distributed, rpn=rpn)
 
         if not opt.no_train and opt.lr_scheduler == 'multistep':
             scheduler.step()
