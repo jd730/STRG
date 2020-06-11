@@ -6,8 +6,19 @@ import pdb
 
 import torch
 import torch.distributed as dist
+import torch.nn as nn
 
 from utils import AverageMeter, calculate_accuracy
+
+
+def freeze_bn(model):
+    print("Freezing Mean/Var of BatchNorm2D.")
+    print("Freezing Weight/Bias of BatchNorm2D.")
+    for m in model.modules():
+        if isinstance(m, nn.BatchNorm2d) or isinstance(m, nn.BatchNorm3d) or isinstance(m, nn.BatchNorm1d):
+            m.eval()
+            m.weight.requires_grad = False
+            m.bias.requires_grad = False
 
 
 def train_epoch(epoch,
@@ -27,6 +38,8 @@ def train_epoch(epoch,
     model.train()
     if rpn is not None:
         rpn.eval()
+    else:
+        freeze_bn(model)
 
     batch_time = AverageMeter()
     data_time = AverageMeter()
