@@ -92,14 +92,20 @@ def get_validation_data(video_path,
     assert input_type in ['rgb', 'flow']
     assert file_type in ['jpg', 'hdf5']
 
+    if 'somethingv1' in dataset_name:
+        formatter = sthv1_image_name_formatter
+    elif 'somethingv2' in dataset_name:
+        formatter = sthv2_image_name_formatter
+    else:
+        formatter = image_name_formatter
+
     if file_type == 'jpg':
         assert input_type == 'rgb', 'flow input is supported only when input type is hdf5.'
-
         if get_image_backend() == 'accimage':
             from datasets.loader import ImageLoaderAccImage
-            loader = VideoLoader(image_name_formatter, ImageLoaderAccImage())
+            loader = VideoLoader(formatter, ImageLoaderAccImage())
         else:
-            loader = VideoLoader(image_name_formatter)
+            loader = VideoLoader(formatter)
 
         video_path_formatter = (
             lambda root_path, label, video_id: root_path / label / video_id)

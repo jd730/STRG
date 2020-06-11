@@ -1,7 +1,7 @@
 import json
 import copy
 import functools
-
+import pdb
 import torch
 from torch.utils.data.dataloader import default_collate
 
@@ -46,7 +46,6 @@ class VideoDatasetMultiClips(VideoDataset):
         video_frame_indices = self.data[index]['frame_indices']
         if self.temporal_transform is not None:
             video_frame_indices = self.temporal_transform(video_frame_indices)
-
         clips, segments = self.__loading(path, video_frame_indices)
 
         if isinstance(self.target_type, list):

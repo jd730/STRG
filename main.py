@@ -359,10 +359,10 @@ def main_worker(index, opt):
 
     model = make_data_parallel(model, opt.distributed, opt.device)
 
-    if opt.pretrain_path:
-        parameters = get_fine_tuning_parameters(model, opt.ft_begin_module)
-    else:
-        parameters = model.parameters()
+#    if opt.pretrain_path:
+#        parameters = get_fine_tuning_parameters(model, opt.ft_begin_module)
+#    else:
+    parameters = model.parameters()
 
     if opt.is_master_node:
         print(model)
