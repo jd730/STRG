@@ -40,12 +40,15 @@ def train_epoch(epoch,
         targets = targets.to(device, non_blocking=True)
         N, C, T, H, W = inputs.size()
         idx = torch.arange(0,T,2)
-        rpn_inputs = inputs[:,:,idx]
-        rpn_inputs = rpn_inputs.transpose(1,2).contiguous().view(N*(T//2),C,H,W)
-        with torch.no_grad():
-            proposals = rpn(rpn_inputs)
-        proposals = torch.cat((proposals)).view(N,T//2,10,4)
-        outputs = model(inputs, proposals)
+        if rpn is not None:
+            rpn_inputs = inputs[:,:,idx]
+            rpn_inputs = rpn_inputs.transpose(1,2).contiguous().view(N*(T//2),C,H,W)
+            with torch.no_grad():
+                proposals = rpn(rpn_inputs)
+            proposals = torch.cat((proposals)).view(N,T//2,10,4)
+            outputs = model(inputs, proposals)
+        else:
+            outputs = model(inputs)
         loss = criterion(outputs, targets)
         acc = calculate_accuracy(outputs, targets)
 
@@ -68,18 +71,18 @@ def train_epoch(epoch,
                 'acc': accuracies.val,
                 'lr': current_lr
             })
-
-        print('Epoch: [{0}][{1}/{2}]\t'
-              'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-              'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-              'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-              'Acc {acc.val:.3f} ({acc.avg:.3f})'.format(epoch,
-                                                         i + 1,
-                                                         len(data_loader),
-                                                         batch_time=batch_time,
-                                                         data_time=data_time,
-                                                         loss=losses,
-                                                         acc=accuracies))
+        if i % 20 == 0:
+            print('Epoch: [{0}][{1}/{2}]\t'
+                'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                'Acc {acc.val:.3f} ({acc.avg:.3f})'.format(epoch,
+                                                            i + 1,
+                                                            len(data_loader),
+                                                            batch_time=batch_time,
+                                                            data_time=data_time,
+                                                            loss=losses,
+                                                            acc=accuracies))
 
     if distributed:
         loss_sum = torch.tensor([losses.sum],

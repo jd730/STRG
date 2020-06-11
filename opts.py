@@ -288,6 +288,9 @@ def parse_opts():
                         type=int,
                         help='number of nodes for distributed training')
 
+    parser.add_argument('--strg',
+                        action='store_true',
+                        help='Use STRG.')
     args = parser.parse_args()
 
     return args

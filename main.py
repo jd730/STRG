@@ -349,12 +349,14 @@ def main_worker(index, opt):
     if opt.resume_path is not None:
         model = resume_model(opt.resume_path, opt.arch, model)
 
-    model = STRG(model)
-#    rpn = fasterrcnn_resnet50_fpn(pretrained=True)
-    rpn = RPN()
+    if opt.strg:
+        model = STRG(model)
+        rpn = RPN()
+        rpn = make_data_parallel(rpn, opt.distributed, opt.device)
+    else:
+        rpn = None
 
     model = make_data_parallel(model, opt.distributed, opt.device)
-    rpn = make_data_parallel(rpn, opt.distributed, opt.device)
 
     if opt.pretrain_path:
         parameters = get_fine_tuning_parameters(model, opt.ft_begin_module)
@@ -378,7 +380,8 @@ def main_worker(index, opt):
         val_loader, val_logger = get_val_utils(opt)
 
     if opt.tensorboard and opt.is_master_node:
-        from torch.utils.tensorboard import SummaryWriter
+        #from torch.utils.tensorboard import SummaryWriter
+        from tensorboardX import SummaryWriter
         if opt.begin_epoch == 1:
             tb_writer = SummaryWriter(log_dir=opt.result_path)
         else:
