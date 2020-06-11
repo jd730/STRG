@@ -16,13 +16,18 @@ from models import resnet, resnet2p1d, pre_act_resnet, wide_resnet, resnext, den
 
 class STRG(nn.Module):
     def __init__(self, base_model, in_channel=2048, out_channel=512,
-                 nclass=174, dropout=0.3, nrois=10):
+                 nclass=174, dropout=0.3, nrois=10,
+                 freeze_bn=True, freeze_bn_affine=True
+                 ):
         super(STRG,self).__init__()
         self.base_model = base_model
         self.in_channel = in_channel
         self.out_channel = out_channel
         self.nclass = nclass
         self.nrois = nrois
+
+        self.freeze_bn = freeze_bn
+        self.freeze_bn_affine = freeze_bn_affine
 
         self.base_model.fc = nn.Identity()
         self.base_model.avgpool = nn.Identity()
@@ -76,6 +81,25 @@ class STRG(nn.Module):
         outputs = self.classifier(features)
 
         return outputs
+
+
+    def train(self, mode=True):
+        """
+            Override the default train() to freeze the BN parameters
+        """
+
+        super(STRG, self).train(mode)
+        if self.freeze_bn:
+            print("Freezing Mean/Var of BatchNorm2D.")
+            if self.freeze_bn_affine:
+                print("Freezing Weight/Bias of BatchNorm2D.")
+        if self.freeze_bn:
+            for m in self.base_model.modules():
+                if isinstance(m, nn.BatchNorm2d) or isinstance(m, nn.BatchNorm3d) or isinstance(m, nn.BatchNorm1d):
+                    m.eval()
+                    if self.freeze_bn_affine:
+                        m.weight.requires_grad = False
+                        m.bias.requires_grad = False
 
 
 if __name__ == '__main__':

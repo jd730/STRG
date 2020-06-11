@@ -38,9 +38,9 @@ def train_epoch(epoch,
         data_time.update(time.time() - end_time)
 
         targets = targets.to(device, non_blocking=True)
-        N, C, T, H, W = inputs.size()
-        idx = torch.arange(0,T,2)
         if rpn is not None:
+            N, C, T, H, W = inputs.size()
+            idx = torch.arange(0,T,2)
             rpn_inputs = inputs[:,:,idx]
             rpn_inputs = rpn_inputs.transpose(1,2).contiguous().view(N*(T//2),C,H,W)
             with torch.no_grad():
