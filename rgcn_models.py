@@ -7,7 +7,7 @@ import pdb
 import time
 
 from module.gcn import GCN, GraphConvolution
-from roi_graph import get_st_graph
+from module.roi_graph import get_st_graph
 
 
 class RGCN(torch.nn.Module):
@@ -29,43 +29,42 @@ class RGCN(torch.nn.Module):
         self.sim_embed1 = nn.Linear(in_channel, in_channel, bias=False)
         self.sim_embed2 = nn.Linear(in_channel, in_channel, bias=False)
 
-        self.st_gc1 = GraphConvolution(in_channel, in_channel, bias=False)
-        self.st_gc2 = GraphConvolution(in_channel, in_channel, bias=False)
-        self.st_gc3 = GraphConvolution(in_channel, self.out_channel, bias=False)
+        self.st_gc1 = GraphConvolution(in_channel, in_channel, bias=False, batch=True)
+        self.st_gc2 = GraphConvolution(in_channel, in_channel, bias=False, batch=True)
+        self.st_gc3 = GraphConvolution(in_channel, self.out_channel, bias=False, batch=True)
         if self.separate_fb:
-            self.st_gc1_back = GraphConvolution(in_channel, in_channel, bias=False)
-            self.st_gc2_back = GraphConvolution(in_channel, in_channel, bias=False)
-            self.st_gc3_back = GraphConvolution(in_channel, self.out_channel, bias=False)
+            self.st_gc1_back = GraphConvolution(in_channel, in_channel, bias=False, batch=True)
+            self.st_gc2_back = GraphConvolution(in_channel, in_channel, bias=False, batch=True)
+            self.st_gc3_back = GraphConvolution(in_channel, self.out_channel, bias=False, batch=True)
 
-        self.sim_gc1 = GraphConvolution(in_channel, in_channel, bias=False)
-        self.sim_gc2 = GraphConvolution(in_channel, in_channel, bias=False)
-        self.sim_gc3 = GraphConvolution(in_channel, self.out_channel, bias=False)
+        self.sim_gc1 = GraphConvolution(in_channel, in_channel, bias=False, batch=True)
+        self.sim_gc2 = GraphConvolution(in_channel, in_channel, bias=False, batch=True)
+        self.sim_gc3 = GraphConvolution(in_channel, self.out_channel, bias=False, batch=True)
 
-#        self.dropout = nn.Dropout(dropout)
+        self.dropout = nn.Dropout(dropout)
         self.init_weight()
 
-    def st_GCN(self, input, adj):
+
+    def st_GCN(self, input, front_graph, back_graph=None):
         input = input.squeeze(2)
-        out = F.relu(self.st_gc1(input,adj))
+        out = F.relu(self.st_gc1(input,front_graph))
         if self.separate_fb:
-            adj_back = adj.transpose(1,0)
-            out += F.relu(self.st_gc1_back(input,adj_back))
+            out += F.relu(self.st_gc1_back(input,back_graph))
 #        out = self.dropout(out)
 
-        out2 = F.relu(self.st_gc2(out,adj))
+        out2 = F.relu(self.st_gc2(out,front_graph))
         if self.separate_fb:
-            out2 += F.relu(self.st_gc2_back(out,adj_back))
+            out2 += F.relu(self.st_gc2_back(out,back_graph))
         out = out2
 #        out = self.dropout(out2)
 
-        out2 = F.relu(self.st_gc3(out,adj))
+        out2 = F.relu(self.st_gc3(out,front_graph))
         if self.separate_fb:
-            out2 += F.relu(self.st_gc3_back(out,adj_back))
+            out2 += F.relu(self.st_gc3_back(out,back_graph))
         return out2
 
 
     def sim_GCN(self, input, adj):
-        input = input.squeeze(2)
         out = F.relu(self.sim_gc1(input,adj))
 #        out = self.dropout(out)
         out = F.relu(self.sim_gc2(out,adj))
@@ -108,63 +107,32 @@ class RGCN(torch.nn.Module):
 
 
 
-    def forward(self, rois_info):
-        if rois_info is None:
-            raise Exception("WRONG")
+    def forward(self, rois_features, rois):
+        front_graph, back_graph = get_st_graph(rois)
 
-        rois_features, rois, rois_st_graph = rois_info
-        N = len(rois)
+        front_graph = front_graph.to(rois.device).detach()
+        back_graph = back_graph.to(rois.device).detach()
 
+        B, T, N, C = rois_features.size()
+        N_rois = T*N
+        rois_features = rois_features.view(B, N_rois, -1)
+        sim_graph = self.sim_graph(rois_features).detach()
+        sim_gcn = self.sim_GCN(rois_features, sim_graph)
+        st_gcn = self.st_GCN(rois_features, front_graph, back_graph)
+        gcn_out = sim_gcn + st_gcn
+        gcn_out = gcn_out.mean(1)
+        gcn_out = self.dropout(gcn_out)
+        return gcn_out
 
-#        N_rois = rois_features.shape[2]
-#        rois_features = rois_features.view(-1,N_rois, rois_features.shape[3])
-        N_rois = rois_features.shape[-2]
-        if N_rois == 0 :
-            print(rois_features.shape)
-        rois_features = rois_features.view(-1,N_rois, rois_features.shape[-1])
-        rois = rois.view(-1,N_rois, 5)
-        rois_st_graph = rois_st_graph.view(len(rois), N_rois, N_rois)
-
-        ret_val = []
-        count = 0
-
-        for i, (f,r,s) in enumerate(zip(rois_features, rois, rois_st_graph)):
-            # why should we set this?
-            idx = torch.nonzero(r[:,0] >= 0).view(-1)
-            if len(idx) == 0:
-#                if self.fusion_type == 'mult':
-#                    ret_val.append(torch.ones((1,1024)).cuda())
-#                else:
-                ret_val.append(torch.zeros((1,512)).cuda())
-                count +=1
-                continue
-
-            r = r[idx]
-            f = f[idx]
-            st_graph = s[:len(idx),:len(idx)].detach()
-            encoded_features = f.unsqueeze(-1)
-            sim_graph = self.sim_graph(encoded_features.squeeze(-1))
-
-            st_gcn = self.st_GCN(encoded_features, st_graph)
-            sim_gcn = self.sim_GCN(encoded_features, sim_graph)
-
-            gcn_out = st_gcn + sim_gcn
-#            if not self.two_stream:
-#                gcn_out = gcn_out.mean(dim=0, keepdim=True)
-            ret_val.append(gcn_out)
-
-        ret_val = torch.stack(ret_val, 0)
-        ret_val = ret_val.view(N, -1, ret_val.shape[-1])
-#        print("ZERO", count)
-        return ret_val
 
 
     def sim_graph(self, features):
         sim1 = self.sim_embed1(features)
         sim2 = self.sim_embed2(features)
-        sim_features = torch.matmul(sim1, sim2.transpose(1,0)) # d x d mat.
-        sim_graph = F.softmax(sim_features, dim=1)
+        sim_features = torch.matmul(sim1, sim2.transpose(1,2)) # d x d mat.
+        sim_graph = F.softmax(sim_features, dim=-1)
         return sim_graph
+
 
     def get_optim_policies(self):
 
@@ -189,7 +157,6 @@ class RGCN(torch.nn.Module):
                     normal_bias.append(ps[1])
             elif len(m._modules) == 0:
                 if len(list(m.parameters())) > 0:
-                    pdb.set_trace()
                     raise ValueError("New atomic module type: {}. Need to give it a learning policy".format(type(m)))
 
         return [
@@ -198,6 +165,15 @@ class RGCN(torch.nn.Module):
             {'params': normal_bias, 'lr_mult': 2, 'decay_mult': 0,
              'name': "normal_bias"},
         ]
+
+
+if __name__ == '__main__':
+    rois = torch.rand((4,8,10,4))
+    rois_features = torch.rand((4,8,10,512))
+    rgcn = RGCN()
+    out = rgcn(rois_features, rois)
+
+    pdb.set_trace()
 
 
 

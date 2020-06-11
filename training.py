@@ -39,10 +39,12 @@ def train_epoch(epoch,
 
         targets = targets.to(device, non_blocking=True)
         N, C, T, H, W = inputs.size()
-        rpn_inputs = inputs.transpose(1,2).contiguous().view(N*T,C,H,W)
+        idx = torch.arange(0,T,2)
+        rpn_inputs = inputs[:,:,idx]
+        rpn_inputs = rpn_inputs.transpose(1,2).contiguous().view(N*(T//2),C,H,W)
         with torch.no_grad():
             proposals = rpn(rpn_inputs)
-        proposals = torch.cat((proposals)).view(N,T,10,4)
+        proposals = torch.cat((proposals)).view(N,T//2,10,4)
         outputs = model(inputs, proposals)
         loss = criterion(outputs, targets)
         acc = calculate_accuracy(outputs, targets)
