@@ -15,10 +15,13 @@ def val_epoch(epoch,
               device,
               logger,
               tb_writer=None,
-              distributed=False):
+              distributed=False,
+              rpn=None):
     print('validation at epoch {}'.format(epoch))
 
     model.eval()
+    if rpn is not None:
+        rpn.eval()
 
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -32,7 +35,18 @@ def val_epoch(epoch,
             data_time.update(time.time() - end_time)
 
             targets = targets.to(device, non_blocking=True)
-            outputs = model(inputs)
+            if rpn is not None:
+                N, C, T, H, W = inputs.size()
+                idx = torch.arange(0,T,2)
+                rpn_inputs = inputs[:,:,idx]
+                rpn_inputs = rpn_inputs.transpose(1,2).contiguous().view(N*(T//2),C,H,W)
+                with torch.no_grad():
+                    proposals = rpn(rpn_inputs)
+                proposals = torch.cat((proposals)).view(N,T//2,10,4)
+                outputs = model(inputs, proposals)
+            else:
+                outputs = model(inputs)
+
             loss = criterion(outputs, targets)
             acc = calculate_accuracy(outputs, targets)
 
