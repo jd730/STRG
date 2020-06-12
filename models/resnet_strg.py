@@ -233,9 +233,8 @@ class ResNet(nn.Module):
 
         return x
 
-    def load_imagenet_pretrained(self):  # only ResNet 50 implemented
+    def load_imagenet_pretrained(self, resnet2d):  # only ResNet 50 implemented
         print("Load ImageNet pre-trained weight")
-        resnet2d = models.resnet50(pretrained=True)
         state_dict_2d = resnet2d.state_dict()
         state_dict = self.state_dict()
         for k in state_dict.keys():
@@ -252,19 +251,25 @@ def generate_model(model_depth, **kwargs):
 
     if model_depth == 10:
         model = ResNet(BasicBlock, [1, 1, 1, 1], get_inplanes(), **kwargs)
+        model.load_imagenet_pretrained(models.resnet10(pretrained=True))
     elif model_depth == 18:
         model = ResNet(BasicBlock, [2, 2, 2, 2], get_inplanes(), **kwargs)
+        model.load_imagenet_pretrained(models.resnet18(pretrained=True))
     elif model_depth == 34:
         model = ResNet(BasicBlock, [3, 4, 6, 3], get_inplanes(), **kwargs)
+        model.load_imagenet_pretrained(models.resnet34(pretrained=True))
     elif model_depth == 50:
         model = ResNet(Bottleneck, [3, 4, 6, 3], get_inplanes(), **kwargs)
-        model.load_imagenet_pretrained()
+        model.load_imagenet_pretrained(models.resnet50(pretrained=True))
     elif model_depth == 101:
         model = ResNet(Bottleneck, [3, 4, 23, 3], get_inplanes(), **kwargs)
+        model.load_imagenet_pretrained(models.resnet101(pretrained=True))
     elif model_depth == 152:
         model = ResNet(Bottleneck, [3, 8, 36, 3], get_inplanes(), **kwargs)
+        model.load_imagenet_pretrained(models.resnet152(pretrained=True))
     elif model_depth == 200:
         model = ResNet(Bottleneck, [3, 24, 36, 3], get_inplanes(), **kwargs)
+        model.load_imagenet_pretrained(models.resnet200(pretrained=True))
 
     return model
 
