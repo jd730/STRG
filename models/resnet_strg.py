@@ -4,7 +4,7 @@ import pdb
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+import torchvision.models as models
 
 def get_inplanes():
     return [64, 128, 256, 512]
@@ -233,6 +233,19 @@ class ResNet(nn.Module):
 
         return x
 
+    def load_imagenet_pretrained(self):  # only ResNet 50 implemented
+        print("Load ImageNet pre-trained weight")
+        resnet2d = models.resnet50(pretrained=True)
+        state_dict_2d = resnet2d.state_dict()
+        state_dict = self.state_dict()
+        for k in state_dict.keys():
+            v_2d = state_dict_2d[k]
+            if len(state_dict[k].shape) != len(v_2d.shape):
+                state_dict[k] = v_2d.unsqueeze(2)
+            else:
+                state_dict[k] = v_2d
+
+
 
 def generate_model(model_depth, **kwargs):
     assert model_depth in [10, 18, 34, 50, 101, 152, 200]
@@ -245,6 +258,7 @@ def generate_model(model_depth, **kwargs):
         model = ResNet(BasicBlock, [3, 4, 6, 3], get_inplanes(), **kwargs)
     elif model_depth == 50:
         model = ResNet(Bottleneck, [3, 4, 6, 3], get_inplanes(), **kwargs)
+        model.load_imagenet_pretrained()
     elif model_depth == 101:
         model = ResNet(Bottleneck, [3, 4, 23, 3], get_inplanes(), **kwargs)
     elif model_depth == 152:
@@ -265,6 +279,8 @@ if __name__ == '__main__':
                                     no_max_pool=False,
                                     widen_factor=1.0)
     model = model#.cuda()
+
+    pdb.set_trace()
     inputs = torch.rand((4,3,32,224,224))#.cuda()
     out = model(inputs)
     pdb.set_trace()
