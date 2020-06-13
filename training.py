@@ -65,7 +65,8 @@ def train_epoch(epoch,
             rpn_inputs = rpn_inputs.view(-1,C,H,W)
             if len(inputs) < max_N:
                 print("Modified from {} to {}".format(len(inputs), max_N))
-                rpn_inputs = torch.cat((rpn_inputs, rpn_inputs[:(max_N-len(inputs))*(T//interval)]))
+                while len(rpn_inputs) < max_N * (T // interval):
+                    rpn_inputs = torch.cat((rpn_inputs, rpn_inputs[:(max_N-len(inputs))*(T//interval)]))
             with torch.no_grad():
                 proposals = rpn(rpn_inputs)
             proposals = proposals.view(-1,T//interval,10,4)
