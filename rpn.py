@@ -40,6 +40,7 @@ class RPN(nn.Module):
                 During testing, it returns list[BoxList] contains additional fields
                like `scores`, `labels` and `mask` (for Mask R-CNN models).
         """
+        bs = len(images)
         if self.training and targets is None:
             raise ValueError("In training mode, targets should be passed")
         if self.training:
@@ -54,7 +55,6 @@ class RPN(nn.Module):
                 else:
                     raise ValueError("Expected target boxes to be of type "
                                      "Tensor, got {:}.".format(type(boxes)))
-
         original_image_sizes = torch.jit.annotate(List[Tuple[int, int]], [])
         for img in images:
             val = img.shape[-2:]
@@ -62,7 +62,6 @@ class RPN(nn.Module):
             original_image_sizes.append((val[0], val[1]))
 
         images, targets = self.transform(images, targets)
-
         # Check for degenerate boxes
         # TODO: Move this to a function
         if targets is not None:
@@ -82,5 +81,15 @@ class RPN(nn.Module):
             features = OrderedDict([('0', features)])
         proposals, proposal_losses = self.rpn(images, features, targets)
         proposals = self.transform.rpn_postprocess(proposals, images.image_sizes, original_image_sizes)
+        return torch.cat(proposals).view(bs, -1, 4)
 
-        return proposals
+
+if __name__ == '__main__':
+    rpn = RPN().eval()
+    rpn = nn.DataParallel(rpn, device_ids=None).cuda()
+    inputs = torch.rand((5,3,224,224))
+    out = rpn(inputs)
+    pdb.set_trace()
+
+
+
