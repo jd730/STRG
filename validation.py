@@ -46,8 +46,8 @@ def val_epoch(epoch,
                     max_N = N
                 interval = 16
                 # sample frames for RPN
-                idx = torch.arange(0,T,interval)
-                rpn_inputs = inputs[:,:,idx].transpose(1,2).contiguous()
+                sample = torch.arange(0,T,interval)
+                rpn_inputs = inputs[:,:,sample].transpose(1,2).contiguous()
                 rpn_inputs = rpn_inputs.view(-1,C,H,W)
                 if len(inputs) < max_N:
                     print("Modified from {} to {}".format(len(inputs), max_N))
