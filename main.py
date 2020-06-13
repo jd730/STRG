@@ -74,7 +74,7 @@ def get_opt():
         opt.std = opt.std[:2]
 
     if opt.distributed:
-        opt.dist_rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
+        opt.dist_rank = 0 #int(os.environ["OMPI_COMM_WORLD_RANK"])
 
         if opt.dist_rank == 0:
             print(opt)
@@ -248,7 +248,8 @@ def get_val_utils(opt):
     else:
         val_sampler = None
     val_loader = torch.utils.data.DataLoader(val_data,
-                                             batch_size=(opt.batch_size //
+#                                             batch_size=opt.batch_size,
+                                             (opt.batch_size //
                                                          opt.n_val_samples),
                                              shuffle=False,
                                              num_workers=opt.n_threads,
@@ -347,8 +348,6 @@ def main_worker(index, opt):
     if opt.pretrain_path:
         model = load_pretrained_model(model, opt.pretrain_path, opt.model,
                                       opt.n_finetune_classes)
-    if opt.resume_path is not None:
-        model = resume_model(opt.resume_path, opt.arch, model)
 
     if opt.strg:
         model = STRG(model)
@@ -356,6 +355,9 @@ def main_worker(index, opt):
         rpn = make_data_parallel(rpn, opt.distributed, opt.device)
     else:
         rpn = None
+
+    if opt.resume_path is not None:
+        model = resume_model(opt.resume_path, opt.arch, model)
 
     model = make_data_parallel(model, opt.distributed, opt.device)
 
