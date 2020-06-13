@@ -33,20 +33,33 @@ def val_epoch(epoch,
     with torch.no_grad():
         for i, (inputs, targets) in enumerate(data_loader):
             data_time.update(time.time() - end_time)
-
             targets = targets.to(device, non_blocking=True)
             if rpn is not None:
+                '''
+                    There was an unexpected CUDNN_ERROR when len(rpn_inputs) is
+                    decrased.
+                '''
+
+                T = inputs.shape[2]
                 N, C, T, H, W = inputs.size()
-                print(inputs.shape)
+                if i == 0:
+                    max_N = N
                 interval = 16
+                # sample frames for RPN
                 idx = torch.arange(0,T,interval)
-                rpn_inputs = inputs[:,:,idx]
-                rpn_inputs = rpn_inputs.transpose(1,2).contiguous().view(N*(T//interval),C,H,W)
-                print(rpn_inputs.shape)
+                rpn_inputs = inputs[:,:,idx].transpose(1,2).contiguous()
+                rpn_inputs = rpn_inputs.view(-1,C,H,W)
+                if len(inputs) < max_N:
+                    print("Modified from {} to {}".format(len(inputs), max_N))
+                    rpn_inputs = torch.cat((rpn_inputs, rpn_inputs[:(max_N-len(inputs))*(T//interval)]))
                 with torch.no_grad():
                     proposals = rpn(rpn_inputs)
-                proposals = proposals.view(N,T//interval,10,4)
-                outputs = model(inputs, proposals)
+                proposals = proposals.view(-1,T//interval,10,4)
+                if len(inputs) < max_N:
+                    proposals = proposals[:len(inputs)]
+                outputs = model(inputs, proposals.detach())
+                # update to the largest batch_size
+                max_N = max(N, max_N)
             else:
                 outputs = model(inputs)
 
