@@ -296,7 +296,7 @@ def parse_opts():
                         help='Use STRG.')
 
     parser.add_argument('--det_interval',
-                        default=16,
+                        default=2,
                         type=int,
                         help='Detection Interval which should be aligned with'
                         'backbone architecture.')
