@@ -347,11 +347,11 @@ def main_worker(index, opt):
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
     if opt.pretrain_path:
         model = load_pretrained_model(model, opt.pretrain_path, opt.model,
-                                      opt.n_finetune_classes)
+                                      opt.n_finetune_classes, opt.strg)
 
     if opt.strg:
-        model = STRG(model)
-        rpn = RPN()
+        model = STRG(model, nclass=opt.n_classes, nrois=opt.nrois)
+        rpn = RPN(nrois=opt.nrois)
         rpn = make_data_parallel(rpn, opt.distributed, opt.device)
     else:
         rpn = None
@@ -413,7 +413,8 @@ def main_worker(index, opt):
             current_lr = get_lr(optimizer)
             train_epoch(i, train_loader, model, criterion, optimizer,
                         opt.device, current_lr, train_logger,
-                        train_batch_logger, tb_writer, opt.distributed,rpn=rpn)
+                        train_batch_logger, tb_writer, opt.distributed,rpn=rpn,
+                        det_interval=opt.det_interval, nrois=opt.nrois)
 
             if i % opt.checkpoint == 0 and opt.is_master_node:
                 save_file_path = opt.result_path / 'save_{}.pth'.format(i)
@@ -423,7 +424,8 @@ def main_worker(index, opt):
         if not opt.no_val:
             prev_val_loss = val_epoch(i, val_loader, model, criterion,
                                       opt.device, val_logger, tb_writer,
-                                      opt.distributed, rpn=rpn)
+                                      opt.distributed, rpn=rpn,
+                                    det_interval=opt.det_interval, nrois=opt.nrois)
 
         if not opt.no_train and opt.lr_scheduler == 'multistep':
             scheduler.step()

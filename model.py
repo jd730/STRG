@@ -103,12 +103,16 @@ def generate_model(opt):
     return model
 
 
-def load_pretrained_model(model, pretrain_path, model_name, n_finetune_classes):
+def load_pretrained_model(model, pretrain_path, model_name, n_finetune_classes,
+                          is_strg=False):
     if pretrain_path:
         print('loading pretrained model {}'.format(pretrain_path))
         pretrain = torch.load(pretrain_path, map_location='cpu')
 
         model.load_state_dict(pretrain['state_dict'])
+        if is_strg:
+            return model
+
         tmp_model = model
         if model_name == 'densenet':
             tmp_model.classifier = nn.Linear(tmp_model.classifier.in_features,

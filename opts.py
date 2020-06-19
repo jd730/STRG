@@ -294,6 +294,18 @@ def parse_opts():
     parser.add_argument('--strg',
                         action='store_true',
                         help='Use STRG.')
+
+    parser.add_argument('--det_interval',
+                        default=16,
+                        type=int,
+                        help='Detection Interval which should be aligned with'
+                        'backbone architecture.')
+
+    parser.add_argument('--nrois',
+                        default=10,
+                        type=int,
+                        help='The number of rois')
+
     args = parser.parse_args()
 
     return args

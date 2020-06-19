@@ -18,7 +18,7 @@ class STRG(nn.Module):
     def __init__(self, base_model, in_channel=2048, out_channel=512,
                  nclass=174, dropout=0.3, nrois=10,
                  freeze_bn=True, freeze_bn_affine=True,
-                 roi_size=4
+                 roi_size=7
                  ):
         super(STRG,self).__init__()
         self.base_model = base_model
@@ -51,17 +51,20 @@ class STRG(nn.Module):
         self.roi_align = RoIAlign((roi_size,roi_size), 1/8, -1, aligned=True)
 
     def extract_feature(self, x):
-        x = self.base_model.conv1(x)
-        x = self.base_model.bn1(x)
-        x = self.base_model.relu(x)
-        if not self.base_model.no_max_pool:
-            x = self.base_model.maxpool(x)
+        return self.base_model.extract_feature(x)
 
-        x = self.base_model.layer1(x)
-        x = self.base_model.layer2(x)
-        x = self.base_model.layer3(x)
-        x = self.base_model.layer4(x)
-        return x
+
+#        x = self.base_model.conv1(x)
+#        x = self.base_model.bn1(x)
+#        x = self.base_model.relu(x)
+#        if not self.base_model.no_max_pool:
+#            x = self.base_model.maxpool(x)
+
+#        x = self.base_model.layer1(x)
+#        x = self.base_model.layer2(x)
+#        x = self.base_model.layer3(x)
+#        x = self.base_model.layer4(x)
+#        return x
 
 
     def forward(self, inputs, rois=None):
@@ -122,6 +125,3 @@ if __name__ == '__main__':
 
     pdb.set_trace()
     print(out.shape)
-
-
-

@@ -1,6 +1,5 @@
 import math
 from functools import partial
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -192,6 +191,23 @@ class ResNet(nn.Module):
             layers.append(block(self.in_planes, planes))
 
         return nn.Sequential(*layers)
+
+
+
+    def extract_feature(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        if not self.no_max_pool:
+            x = self.maxpool(x)
+
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        return x
+
+
 
     def forward(self, x):
         x = self.conv1(x)

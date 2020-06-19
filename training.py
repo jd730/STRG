@@ -32,7 +32,9 @@ def train_epoch(epoch,
                 batch_logger,
                 tb_writer=None,
                 distributed=False,
-                rpn=None):
+                rpn=None,
+                det_interval=2,
+                nrois=10):
     print('train at epoch {}'.format(epoch))
 
     model.train()
@@ -58,18 +60,17 @@ def train_epoch(epoch,
             N, C, T, H, W = inputs.size()
             if i == 0:
                 max_N = N
-            interval = 16
             # sample frames for RPN
-            sample = torch.arange(0,T,interval)
+            sample = torch.arange(0,T,det_interval)
             rpn_inputs = inputs[:,:,sample].transpose(1,2).contiguous()
             rpn_inputs = rpn_inputs.view(-1,C,H,W)
             if len(inputs) < max_N:
                 print("Modified from {} to {}".format(len(inputs), max_N))
-                while len(rpn_inputs) < max_N * (T // interval):
-                    rpn_inputs = torch.cat((rpn_inputs, rpn_inputs[:(max_N-len(inputs))*(T//interval)]))
+                while len(rpn_inputs) < max_N * (T // det_interval):
+                    rpn_inputs = torch.cat((rpn_inputs, rpn_inputs[:(max_N-len(inputs))*(T//det_interval)]))
             with torch.no_grad():
                 proposals = rpn(rpn_inputs)
-            proposals = proposals.view(-1,T//interval,10,4)
+            proposals = proposals.view(-1,T//det_interval,nrois,4)
             if len(inputs) < max_N:
                 proposals = proposals[:len(inputs)]
             outputs = model(inputs, proposals.detach())
