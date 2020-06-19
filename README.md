@@ -142,7 +142,7 @@ First of all, we need to train backbone network (ResNet-50-I3D) for 100 epochs w
 The original batchsize is 8 but in this implementation, we use 32 to reduce the training time.
 
 ```bash
-main.py --root_path data --video_path data/something/v1/img --annotation_path sthv1.json \
+python main.py --root_path data --video_path data/something/v1/img --annotation_path sthv1.json \
 --result_path resnet_strg_imgnet_bs32 --dataset somethingv1 --n_classes 174 --n_pretrain_classes 700 \
 --ft_begin_module fc --tensorboard --wandb --conv1_t_size 5 --learning_rate 0.00125 --sample_duration 32 \
 --n_epochs 100 --multistep_milestones 90 --model resnet_strg --model_depth 50 --batch_size 32 \
@@ -152,7 +152,7 @@ main.py --root_path data --video_path data/something/v1/img --annotation_path st
 Then, we need to train with GCN module until 30 epochs with learning rate as 0.000125.
 
 ```bash
-main.py --root_path data --video_path data/something/v1/img --annotation_path sthv1.json \
+python main.py --root_path data --video_path data/something/v1/img --annotation_path sthv1.json \
 --result_path resnet_strg_imgnet_32_gcn --dataset somethingv1 --n_classes 174 --n_pretrain_classes 174 \
 --ft_begin_module fc --tensorboard --wandb --conv1_t_size 5 --strg --learning_rate 0.000125 \
 --sample_duration 32 --n_epochs 30 --model resnet_strg --model_depth 50 --batch_size 32 \
