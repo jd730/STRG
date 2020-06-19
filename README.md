@@ -2,11 +2,21 @@
 
 ## Summary
 
-This is the unofficial PyTorch code for the following paper:
+This repository is for testing the idea of the following paper:
 
 [
 Wang, Xiaolong, and Abhinav Gupta. "Videos as space-time region graphs." Proceedings of the European conference on computer vision (ECCV). 2018.
 ](http://openaccess.thecvf.com/content_ECCV_2018/papers/Xiaolong_Wang_Videos_as_Space-Time_ECCV_2018_paper.pdf)
+
+It means that it may contain several mismatch with the original implementation introduced on the paper.
+
+## Notes
+
+This repository is based on https://github.com/kenshohara/3D-ResNets-PyTorch.
+
+The architecture of ResNet-50-I3D in the paper is different from that in the above repository. I did not use Kinetics pre-trained model but use ImageNet pre-trained model.
+
+Currently, RPN is used on every iteration which requires approximately 3 times more training time.
 
 
 ## Requirements
@@ -64,6 +74,8 @@ python util_scripts/sthv2_json.py 'data/something/v2' 'data/something/v2/img' 'd
 
 ## Running the code
 
+### Data Path
+
 Assume the structure of data directories is the following:
 
 ```misc
@@ -94,6 +106,8 @@ Confirm all options.
 python main.py -h
 ```
 
+### Kinetics Pre-training
+
 Train ResNets-50 on the Kinetics-700 dataset (700 classes) with 4 CPU threads (for data loading).  
 Batch size is 128.  
 Save models at every 5 epochs.
@@ -122,11 +136,43 @@ Evaluate top-1 video accuracy of a recognition result (data/results/val.json).
 python -m util_scripts.eval_accuracy data/sthv2.json data/results/val.json --subset val -k 1 --ignore
 ```
 
-Fine-tune fc layers of a pretrained model (~/data/models/resnet-50-kinetics.pth) on UCF-101.
+### Something-Something-v1
+
+First of all, we need to train backbone network (ResNet-50-I3D) for 100 epochs with learning rate as 0.00125 (decayed at 90 epoch to 0.000125)
+The original batchsize is 8 but in this implementation, we use 32 to reduce the training time.
 
 ```bash
-python main.py --root_path ~/data --video_path ucf101_videos/jpg --annotation_path ucf101_01.json \
---result_path results --dataset ucf101 --n_classes 101 --n_pretrain_classes 700 \
---pretrain_path models/resnet-50-kinetics.pth --ft_begin_module fc \
---model resnet --model_depth 50 --batch_size 128 --n_threads 4 --checkpoint 5
+main.py --root_path data --video_path data/something/v1/img --annotation_path sthv1.json \
+--result_path resnet_strg_imgnet_bs32 --dataset somethingv1 --n_classes 174 --n_pretrain_classes 700 \
+--ft_begin_module fc --tensorboard --wandb --conv1_t_size 5 --learning_rate 0.00125 --sample_duration 32 \
+--n_epochs 100 --multistep_milestones 90 --model resnet_strg --model_depth 50 --batch_size 32 \
+--n_threads 8 --checkpoint 1
 ```
+
+Then, we need to train with GCN module until 30 epochs with learning rate as 0.000125.
+
+```bash
+main.py --root_path data --video_path data/something/v1/img --annotation_path sthv1.json \
+--result_path resnet_strg_imgnet_32_gcn --dataset somethingv1 --n_classes 174 --n_pretrain_classes 174 \
+--ft_begin_module fc --tensorboard --wandb --conv1_t_size 5 --strg --learning_rate 0.000125 \
+--sample_duration 32 --n_epochs 30 --model resnet_strg --model_depth 50 --batch_size 32 \
+--n_threads 8 --checkpoint 1 --pretrain_path resnet_strg_imgnet_bs32/save_100.pth
+```
+
+## Results on Something-Something-v1
+
+### The published results
+
+| Model name         | ResNet-50-I3D | ResNet-50-I3D + STRG |
+| ------------------ |---------------- | -------------- |
+| Top-1 Accuracy   |     41.6%         |      43.3% |
+
+
+### This repo results (without using Kinetic pretraining model)
+
+| Model name         | ResNet-50-I3D | ResNet-50-I3D + STRG |
+| ------------------ |---------------- | -------------- |
+| Accuracy   |     23.2%         |      24.5% |
+
+
+
