@@ -154,8 +154,9 @@ Then, we need to train with GCN module until 30 epochs with learning rate as 0.0
 ```bash
 python main.py --root_path data --video_path data/something/v1/img --annotation_path sthv1.json \
 --result_path resnet_strg_imgnet_32_gcn --dataset somethingv1 --n_classes 174 --n_pretrain_classes 174 \
---ft_begin_module fc --tensorboard --wandb --conv1_t_size 5 --strg --learning_rate 0.000125 \
+--ft_begin_module fc --tensorboard --wandb --conv1_t_size 5  --learning_rate 0.000125 \
 --sample_duration 32 --n_epochs 30 --model resnet_strg --model_depth 50 --batch_size 32 \
+--nrois 10 --det_interval 2 --strg \
 --n_threads 8 --checkpoint 1 --pretrain_path resnet_strg_imgnet_bs32/save_100.pth
 ```
 
