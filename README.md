@@ -172,7 +172,7 @@ python main.py --root_path data --video_path data/something/v1/img --annotation_
 
 | Model name         | ResNet-50-I3D | ResNet-50-I3D + STRG |
 | ------------------ |---------------- | -------------- |
-| Accuracy   |     23.2%         |      24.5% |
+| Top-1 Accuracy   |     23.2%         |      24.5% |
 
 
 
