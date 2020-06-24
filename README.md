@@ -10,6 +10,8 @@ Wang, Xiaolong, and Abhinav Gupta. "Videos as space-time region graphs." Proceed
 
 It means that it may contain several mismatch with the original implementation introduced on the paper.
 
+Also the performance is much lower than the publication (24 vs 43) and I never test Kinetics pre-trained ResNet-50-I3D.
+
 ## Notes
 
 This repository is based on https://github.com/kenshohara/3D-ResNets-PyTorch.
