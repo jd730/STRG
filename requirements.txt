@@ -3,7 +3,7 @@ scikit-learn
 pandas
 numpy
 torch==1.5
-torchvision==0.5
+torchvision==0.6
 wandb
 h5py
 tensorboardX
