@@ -2,23 +2,25 @@
 
 ## Summary
 
-This repository is for testing the idea of the following paper:
+* This repository is for testing the idea of the following paper:
 
 [
 Wang, Xiaolong, and Abhinav Gupta. "Videos as space-time region graphs." Proceedings of the European conference on computer vision (ECCV). 2018.
 ](http://openaccess.thecvf.com/content_ECCV_2018/papers/Xiaolong_Wang_Videos_as_Space-Time_ECCV_2018_paper.pdf)
 
-It means that it may contain several mismatch with the original implementation introduced on the paper.
+* It means that it may contain several mismatch with the original implementation introduced on the paper.
 
-Also the performance is much lower than the publication (24 vs 43) and I never test Kinetics pre-trained ResNet-50-I3D.
+* Also the performance is much lower than the publication (24 vs 43) and I never test Kinetics pre-trained ResNet-50-I3D.
 
 ## Notes
 
-This repository is based on https://github.com/kenshohara/3D-ResNets-PyTorch.
+* This repository is based on https://github.com/kenshohara/3D-ResNets-PyTorch.
 
-The architecture of ResNet-50-I3D in the paper is different from that in the above repository. I did not use Kinetics pre-trained model but use ImageNet pre-trained model.
+* The architecture of ResNet-50-I3D in the paper is different from that in the above repository. I did not use Kinetics pre-trained model but use ImageNet pre-trained model.
 
-Currently, RPN is used on every iteration which requires approximately 3 times more training time.
+* Currently, RPN is used on every iteration which requires approximately 3 times more training time.
+
+* Kinetics pre-trained model can be found in [here](https://github.com/joaanna/something_else).
 
 
 ## Requirements
