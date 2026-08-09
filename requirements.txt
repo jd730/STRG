@@ -2,7 +2,7 @@ tqdm
 scikit-learn
 pandas
 numpy
-torch==2.2.0
+torch==2.13.0
 torchvision==0.6
 wandb
 h5py
